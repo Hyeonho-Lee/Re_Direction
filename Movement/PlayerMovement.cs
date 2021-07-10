@@ -28,10 +28,12 @@ public class PlayerMovement : MonoBehaviour {
     public bool is_dash;
     public bool is_ctrl;
     public bool is_fly;
+    public bool is_wall;
     public float ground_height;
     public float ground_range;
 
     public LayerMask ground_hit;
+    private RaycastHit wall_hit;
 
     public Vector3 movement;
     public Vector3 animation_movement;
@@ -102,11 +104,11 @@ public class PlayerMovement : MonoBehaviour {
         if (Input.GetKeyUp(KeyCode.LeftShift))
             is_dash = false;
 
-        if (Input.GetKeyDown(KeyCode.Space) && is_ground && !is_attack) {
+        if (Input.GetKeyDown(KeyCode.Space) && is_ground && !is_attack && !is_fly && !is_wall) {
             StartCoroutine(Jump());
         }
 
-        if (Input.GetKeyDown(KeyCode.F)) {
+        if (Input.GetKeyDown(KeyCode.F) && is_ground && !is_attack) {
             itemloot.Check_Area();
         }
 
@@ -126,9 +128,9 @@ public class PlayerMovement : MonoBehaviour {
     void Check_Value() {
         if (is_ground) {
             is_fly = false;
-            /*if (velocity < 0.0f) {
-                velocity = -2.0f;
-            }*/
+            if (velocity < 0.0f) {
+                velocity = -5.0f;
+            }
         } else {
             is_fly = true;
             if (velocity < 53.0f) {
@@ -151,6 +153,12 @@ public class PlayerMovement : MonoBehaviour {
         if (is_attack) {
             horizontal = 0;
             vertical = 0;
+        }
+
+        if (is_fly) {
+            cc.slopeLimit = 0f;
+        }else {
+            cc.slopeLimit = 45f;
         }
     }
 
@@ -308,7 +316,16 @@ public class PlayerMovement : MonoBehaviour {
 
     void Check_Ground() {
         Vector3 ground_pos = transform.position - new Vector3(0, ground_height, 0);
+        Vector3 wall_pos = transform.position + new Vector3(0, 1f, 0);
         is_ground = Physics.CheckSphere(ground_pos, ground_range, ground_hit, QueryTriggerInteraction.Ignore);
+        Debug.DrawRay(wall_pos, dir_forward * 1.2f, Color.blue);
+        if (Physics.Raycast(wall_pos, dir_forward, out wall_hit, 1.2f)){
+            if(wall_hit.transform.tag == "Ground") {
+                is_wall = true;
+            }
+        }else {
+            is_wall = false;
+        }
     }
 
     IEnumerator Add_Impact(Vector3 dir, float force) {
