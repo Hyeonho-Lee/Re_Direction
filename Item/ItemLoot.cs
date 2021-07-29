@@ -10,12 +10,17 @@ public class ItemLoot : MonoBehaviour {
     public float loot_angle;
     public float loot_range;
 
-    void Start() {
-        loot_angle = 30f;
-        loot_range = 3f;
+    PlayerInventory playerinventory;
+
+    void Awake() {
+        playerinventory = GameObject.Find("System").GetComponent<PlayerInventory>();
     }
 
-    
+    void Start() {
+        loot_angle = 30f;
+        loot_range = 1.5f;
+    }
+
     void Update() {
     }
 
@@ -42,7 +47,10 @@ public class ItemLoot : MonoBehaviour {
                 }
             }
             if(distance.Count == 1) {
-                Debug.Log("가장 가까운 아이템 = " + area_item[0]);
+                ItemData itemdata = area_item[0].gameObject.GetComponent<ItemData>();
+                //Debug.Log("object = " + area_item[0] + " / name = " + itemdata.all_data[itemdata.input_index].name);
+                Destroy(itemdata.gameObject);
+                playerinventory.Find_Empty_ItemSlot(itemdata.input_index, itemdata.input_count);
             } else if(distance.Count >= 1) {
                 float min_distance = distance[0];
                 int min_index = 0;
@@ -52,7 +60,10 @@ public class ItemLoot : MonoBehaviour {
                         min_index = i;
                     }
                 }
-                Debug.Log("가장 가까운 아이템 = " + area_item[min_index]);
+                ItemData itemdata = area_item[min_index].gameObject.GetComponent<ItemData>();
+                //Debug.Log("object = " + area_item[min_index] + " / name = " + itemdata.all_data[itemdata.input_index].name);
+                Destroy(itemdata.gameObject);
+                playerinventory.Find_Empty_ItemSlot(itemdata.input_index, itemdata.input_count);
             }
         }
     }

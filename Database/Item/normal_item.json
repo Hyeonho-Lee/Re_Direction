@@ -1,0 +1,53 @@
+﻿{
+    "item": [
+        {
+            "index": 1,
+            "name": "돌",
+            "desc": "작은 돌이다.",
+            "en_name": "en_name",
+            "en_desc": "en_desc",
+            "image": "../Image/stone.png",
+            "type": "etc",
+            "count": 1,
+            "weight": 0.2,
+            "size": "1x1"
+        },
+        {
+            "index": 2,
+            "name": "반짝이는 돌",
+            "desc": "이것은 다른 돌에 비해 반짝거리는 돌이다.\n제작에 사용될것이다.",
+            "en_name": "en_name",
+            "en_desc": "en_desc",
+            "image": "../Image/rare_stone.png",
+            "type": "create",
+            "count": 1,
+            "weight": 0.2,
+            "size": "1x1"
+        },
+        {
+            "index": 3,
+            "name": "용의 뿔",
+            "desc": "진귀한 용에게 얻은 뿔이다.\n비싼 가치로 보인다.",
+            "en_name": "en_name",
+            "en_desc": "en_desc",
+            "image": "../Image/dragon.png",
+            "type": "valuable",
+            "count": 1,
+            "weight": 1.0,
+            "size": "2x2"
+        },
+        {
+            "index": 4,
+            "name": "금이간 회중시계",
+            "desc": "금이간 회중시계다.\n누군가에게 도움이 될것이다.",
+            "en_name": "en_name",
+            "en_desc": "en_desc",
+            "image": "../Image/time.png",
+            "type": "quest",
+            "count": 1,
+            "weight": 0.1,
+            "size": "1x1"
+        }
+
+    ]
+}

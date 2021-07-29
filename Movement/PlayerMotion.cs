@@ -5,6 +5,7 @@ using UnityEngine;
 public class PlayerMotion : MonoBehaviour {
 
     private Vector3 movement;
+    private float dash_time;
 
     PlayerMovement playermovement;
     Animator animator;
@@ -14,18 +15,23 @@ public class PlayerMotion : MonoBehaviour {
         animator = GameObject.Find("Body").GetComponent<Animator>();
     }
 
-    
+    void Start() {
+        dash_time = Time.time;
+    }
+
     void Update() {
         Input_Motion();
     }
 
     void Input_Motion() {
         if (playermovement.is_dash == true) {
-            animator.SetFloat("movement_x", playermovement.horizontal * 2f);
-            animator.SetFloat("movement_y", playermovement.vertical * 2f);
+            float dash_motion = (Time.time - dash_time) / 0.2f;
+            animator.SetFloat("movement_x", Mathf.SmoothStep(playermovement.movement.x, playermovement.movement.x * 2.0f, dash_motion));
+            animator.SetFloat("movement_y", Mathf.SmoothStep(playermovement.movement.z, playermovement.movement.z * 2.0f, dash_motion));
         } else {
-            animator.SetFloat("movement_x", playermovement.horizontal);
-            animator.SetFloat("movement_y", playermovement.vertical);
+            dash_time = Time.time;
+            animator.SetFloat("movement_x", playermovement.movement.x);
+            animator.SetFloat("movement_y", playermovement.movement.z);
         }
 
         if (playermovement.is_jump == true) {

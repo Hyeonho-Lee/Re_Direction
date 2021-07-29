@@ -7,10 +7,11 @@ public class TPSCamera : MonoBehaviour {
     public Transform Player_Transform;
     public Transform Camera_Arm;
     public Transform Reset_Transform;
+    public bool is_joystick;
     public GameObject box;
 
-    private float mouse_horizontal;
-    private float mouse_vertical;
+    public float mouse_horizontal;
+    public float mouse_vertical;
     public float whell_value;
     public float camera_distance;
 
@@ -30,13 +31,29 @@ public class TPSCamera : MonoBehaviour {
         Input_whell();
         Raycast_Camera();
     }
-
+    public float test;
     void Look_Movement() {
-        mouse_horizontal = Input.GetAxis("Mouse X");
-        mouse_vertical = Input.GetAxis("Mouse Y");
+        if (!is_joystick) {
+            mouse_horizontal = Input.GetAxis("Mouse X");
+            mouse_vertical = Input.GetAxis("Mouse Y");
+        } else {
+            mouse_horizontal = Input.GetAxis("J_Horizontal");
+            mouse_vertical = -Input.GetAxis("J_Vertical");
+            if (Mathf.Abs(mouse_horizontal) < 0.03f && Mathf.Abs(mouse_vertical) < 0.03f) {
+                mouse_horizontal = 0f;
+                mouse_vertical = 0f;
+            }
+        }
 
         camera_angle = Camera_Arm.rotation.eulerAngles;
         float x = camera_angle.x - mouse_vertical;
+        test = x;
+
+        if (x < 180.0f) {
+            x = Mathf.Clamp(x, -1.0f, 50.0f);
+        }else {
+            x = Mathf.Clamp(x, 335.0f, 361.0f);
+        }
 
         Camera_Arm.rotation = Quaternion.Euler(x, camera_angle.y + mouse_horizontal, camera_angle.z);
 

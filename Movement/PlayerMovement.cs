@@ -15,20 +15,30 @@ public class PlayerMovement : MonoBehaviour {
     public float velocity;
     public float attack_combo;
     public float attack_time;
-    public float roll_wait;
     public float roll_time;
+    public float roll_delay;
     public float roll_speed;
+    public float idle_stamina;
+    public float jump_stamina;
+    public float dash_stamina;
+    public float attack_stamina;
+    public float roll_stamina;
+    private float roll_wait;
 
+    public bool is_joystick;
     public bool is_ground;
     public bool is_roll;
     public bool is_rolls;
     public bool is_roll_timer;
+    public bool is_roll_lock;
     public bool is_attack;
     public bool is_jump;
     public bool is_dash;
     public bool is_ctrl;
     public bool is_fly;
     public bool is_wall;
+    public bool is_stamina;
+    public bool is_idle;
     public float ground_height;
     public float ground_range;
 
@@ -45,27 +55,37 @@ public class PlayerMovement : MonoBehaviour {
     CharacterController cc;
     TPSCamera tpscamera;
     ItemLoot itemloot;
+    PlayerStatus playerstatus;
 
     void Awake() {
         cc = GetComponent<CharacterController>();
-        tpscamera = GameObject.Find("TPS_Camera").GetComponent<TPSCamera>();
         itemloot = GetComponent<ItemLoot>();
+        tpscamera = GameObject.Find("TPS_Camera").GetComponent<TPSCamera>();
+        playerstatus = GameObject.Find("System").GetComponent<PlayerStatus>();
     }
 
     void Start() {
-        mass = 1.0f;
+        mass = 1.2f;
         jump_speed = 2f;
         walk_speed = 5.0f;
         dash_speed = 5.0f;
         velocity = 0.0f;
         ground_height = -0.08f;
-        ground_range = 0.65f;
+        ground_range = 0.2f;
         attack_time = 0.0f;
         attack_combo = 1.0f;
-        roll_wait = 0.0f;
         roll_time = 0.3f;
+        roll_delay = 0.85f;
         roll_speed = 20.0f;
+        idle_stamina = 30.0f;
+        jump_stamina = 1.0f;
+        dash_stamina = 5.0f; ;
+        attack_stamina = 5.0f;
+        roll_stamina = 1.0f;
         impact = Vector3.zero;
+        is_joystick = true;
+        is_stamina = true;
+        is_idle = true;
     }
 
     void Update() {
@@ -87,29 +107,45 @@ public class PlayerMovement : MonoBehaviour {
     }
 
     void Check_Input() {
-        horizontal = Input.GetAxis("Horizontal");
-        vertical = Input.GetAxis("Vertical");
+        if(!is_joystick) {
+            horizontal = Input.GetAxis("Horizontal");
+            vertical = Input.GetAxis("Vertical");
+        }else {
+            horizontal = Input.GetAxis("Horizontal");
+            vertical = Input.GetAxis("Vertical");
+        }
         player_dir = tpscamera.player_dir.normalized;
 
-        if (Input.GetKeyDown(KeyCode.LeftShift) && !is_attack) {
+        if ((Input.GetKeyDown(KeyCode.LeftShift) && is_stamina) ||
+            (Input.GetButtonDown("J_B") && is_stamina)) {
             is_dash = true;
             if (!is_roll_timer) {
                 roll_wait = Time.time;
                 is_roll_timer = true;
-            } else if (is_roll_timer && ((Time.time - roll_wait) < roll_time)) {
+            } else if (is_roll_timer && ((Time.time - roll_wait) < roll_time) && is_stamina && !is_roll_lock) {
                 StartCoroutine(Roll());
+                StartCoroutine(Roll_Lock(roll_delay));
             }
         }
 
-        if (Input.GetKeyUp(KeyCode.LeftShift))
+        if ((Input.GetKeyUp(KeyCode.LeftShift)) ||
+            (Input.GetButtonUp("J_B"))) {
             is_dash = false;
+        }
 
-        if (Input.GetKeyDown(KeyCode.Space) && is_ground && !is_attack && !is_fly && !is_wall) {
+        if ((Input.GetKeyDown(KeyCode.Space) && is_ground && !is_attack && !is_fly && is_stamina) ||
+            (Input.GetButtonDown("J_A") && is_ground && !is_attack && !is_fly && is_stamina)) {
             StartCoroutine(Jump());
         }
 
-        if (Input.GetKeyDown(KeyCode.F) && is_ground && !is_attack) {
+        if ((Input.GetKeyDown(KeyCode.F) && is_ground && !is_attack) ||
+            (Input.GetButtonDown("J_X") && is_ground && !is_attack)) {
             itemloot.Check_Area();
+        }
+
+        if ((Input.GetKeyDown(KeyCode.Tab)) ||
+            (Input.GetButtonDown("J_Y"))) {
+            Debug.Log("ÀÎ¹êÅä¸® ¿°");
         }
 
         if (Input.GetKeyDown(KeyCode.LeftControl))
@@ -118,9 +154,11 @@ public class PlayerMovement : MonoBehaviour {
         if (Input.GetKeyUp(KeyCode.LeftControl))
             is_ctrl = false;
 
-        if (Input.GetMouseButtonDown(0) && !is_attack && !is_rolls) {
+        if ((Input.GetMouseButtonDown(0) && !is_attack && !is_dash && !is_roll && is_stamina) ||
+            (Input.GetButtonDown("J_R1") && !is_attack && !is_dash && !is_roll && is_stamina)) {
             is_attack = true;
             attack_time = 0;
+            playerstatus.stat.stamina_point -= attack_stamina;
             StartCoroutine(Attack());
         }
     }
@@ -128,6 +166,11 @@ public class PlayerMovement : MonoBehaviour {
     void Check_Value() {
         if (is_ground) {
             is_fly = false;
+            if (is_dash && is_ground) {
+                is_idle = false;
+            }else {
+                is_idle = true;
+            }
             if (velocity < 0.0f) {
                 velocity = -5.0f;
             }
@@ -138,10 +181,21 @@ public class PlayerMovement : MonoBehaviour {
             }
         }
 
-        if (is_dash)
+        if (is_dash) {
             move_speed = walk_speed + dash_speed;
-        else
+            if (!is_fly) {
+                if (is_attack) {
+                    is_idle = false;
+                }else {
+                    playerstatus.stat.stamina_point -= dash_stamina * Time.deltaTime;
+                }
+            }
+            if (is_fly && is_dash) {
+                move_speed = walk_speed;
+            }
+        }else {
             move_speed = walk_speed;
+        }
 
         if (is_ctrl)
             move_speed = move_speed / 2;
@@ -157,8 +211,29 @@ public class PlayerMovement : MonoBehaviour {
 
         if (is_fly) {
             cc.slopeLimit = 0f;
-        }else {
+            is_idle = false;
+        } else {
             cc.slopeLimit = 45f;
+        }
+
+        if (is_wall) {
+        }
+
+        if (is_joystick) {
+            tpscamera.is_joystick = true;
+        }else {
+            tpscamera.is_joystick = false;
+        }
+
+        if (playerstatus.stat.stamina_point <= 0) {
+            is_stamina = false;
+            is_dash = false;
+        } else {
+            is_stamina = true;
+        }
+
+        if (playerstatus.stat.stamina_point < 100 && is_idle) {
+            playerstatus.stat.stamina_point += idle_stamina * Time.deltaTime;
         }
     }
 
@@ -271,13 +346,19 @@ public class PlayerMovement : MonoBehaviour {
 
     void Move_Vector(Vector3 input_vector, Vector3 rotate_vector) {
         Quaternion newRotation = Quaternion.LookRotation(rotate_vector);
-        this.transform.rotation = Quaternion.Slerp(this.transform.rotation, newRotation, 10.0f * Time.deltaTime);
+        this.transform.rotation = Quaternion.Slerp(this.transform.rotation, newRotation, 6.0f * Time.deltaTime);
         cc.Move(input_vector * (move_speed * Time.deltaTime) + new Vector3(0.0f, velocity, 0.0f) * Time.deltaTime);
     }
 
     IEnumerator Jump() {
         is_jump = true;
-        velocity = Mathf.Sqrt(jump_speed * -2f * -15.0f);
+        //velocity = Mathf.Sqrt(jump_speed * -2.0f * -15.0f);
+        playerstatus.stat.stamina_point -= jump_stamina;
+        if (movement.z == 0 && movement.x == 0) {
+            StartCoroutine(Add_Impact(transform.up * jump_speed, 35.0f));
+        }else {
+            StartCoroutine(Add_Impact(transform.forward / 2 + (transform.up * jump_speed), 35.0f));
+        }
         yield return new WaitForSeconds(0.2f);
         is_jump = false;
     }
@@ -285,22 +366,30 @@ public class PlayerMovement : MonoBehaviour {
     IEnumerator Roll() {
         is_roll = true;
         is_rolls = true;
+        playerstatus.stat.stamina_point -= roll_stamina;
         yield return new WaitForSeconds(0.5f);
         is_roll = false;
         is_rolls = false;
     }
 
+    IEnumerator Roll_Lock(float delay) {
+        is_roll_lock = true;
+        yield return new WaitForSeconds(delay);
+        is_roll_lock = false;
+    }
+
     IEnumerator Attack() {
         yield return null;
-        while (!(Input.GetMouseButtonDown(0) || attack_time >= 0.7f)) {
+        while (!(Input.GetMouseButtonDown(0) || Input.GetButtonDown("J_R1") || attack_time >= 0.7f)) {
             attack_time += Time.deltaTime;
             yield return null;
         }
-
+        
         if (attack_time >= 0.1f && attack_time <= 0.6f) {
             attack_combo++;
             if (attack_combo < 4) {
                 attack_time = 0;
+                playerstatus.stat.stamina_point -= attack_stamina;
                 StartCoroutine(Attack());
             }else {
                 attack_combo = 1;
@@ -318,8 +407,8 @@ public class PlayerMovement : MonoBehaviour {
         Vector3 ground_pos = transform.position - new Vector3(0, ground_height, 0);
         Vector3 wall_pos = transform.position + new Vector3(0, 1f, 0);
         is_ground = Physics.CheckSphere(ground_pos, ground_range, ground_hit, QueryTriggerInteraction.Ignore);
-        Debug.DrawRay(wall_pos, dir_forward * 1.2f, Color.blue);
-        if (Physics.Raycast(wall_pos, dir_forward, out wall_hit, 1.2f)){
+        Debug.DrawRay(wall_pos, transform.forward * 1.2f, Color.blue);
+        if (Physics.Raycast(wall_pos, transform.forward, out wall_hit, 1.2f)){
             if(wall_hit.transform.tag == "Ground") {
                 is_wall = true;
             }
