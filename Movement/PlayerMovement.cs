@@ -13,6 +13,7 @@ public class PlayerMovement : MonoBehaviour {
     public float dash_speed;
     public float move_speed;
     public float velocity;
+    public float velocity_downhill;
     public float attack_combo;
     public float attack_time;
     public float roll_time;
@@ -20,6 +21,7 @@ public class PlayerMovement : MonoBehaviour {
     public float roll_speed;
     public float idle_stamina;
     public float jump_stamina;
+    public float downhill_stamina;
     public float dash_stamina;
     public float attack_stamina;
     public float roll_stamina;
@@ -33,12 +35,15 @@ public class PlayerMovement : MonoBehaviour {
     public bool is_roll_lock;
     public bool is_attack;
     public bool is_jump;
+    public bool is_jump_lock;
     public bool is_dash;
+    public bool is_downhill;
     public bool is_ctrl;
     public bool is_fly;
     public bool is_wall;
     public bool is_stamina;
     public bool is_idle;
+    public bool is_drop;
     public float ground_height;
     public float ground_range;
 
@@ -66,10 +71,11 @@ public class PlayerMovement : MonoBehaviour {
 
     void Start() {
         mass = 1.2f;
-        jump_speed = 2f;
+        jump_speed = 2.0f;
         walk_speed = 5.0f;
         dash_speed = 5.0f;
         velocity = 0.0f;
+        velocity_downhill = -6.0f;
         ground_height = -0.08f;
         ground_range = 0.2f;
         attack_time = 0.0f;
@@ -78,10 +84,11 @@ public class PlayerMovement : MonoBehaviour {
         roll_delay = 0.85f;
         roll_speed = 20.0f;
         idle_stamina = 30.0f;
-        jump_stamina = 1.0f;
-        dash_stamina = 5.0f; ;
+        jump_stamina = 3.0f;
+        downhill_stamina = 7.0f;
+        dash_stamina = 5.0f;
         attack_stamina = 5.0f;
-        roll_stamina = 1.0f;
+        roll_stamina = 5.0f;
         impact = Vector3.zero;
         is_joystick = true;
         is_stamina = true;
@@ -122,7 +129,7 @@ public class PlayerMovement : MonoBehaviour {
             if (!is_roll_timer) {
                 roll_wait = Time.time;
                 is_roll_timer = true;
-            } else if (is_roll_timer && ((Time.time - roll_wait) < roll_time) && is_stamina && !is_roll_lock) {
+            } else if (is_roll_timer && ((Time.time - roll_wait) < roll_time) && is_stamina && !is_roll_lock && !is_fly) {
                 StartCoroutine(Roll());
                 StartCoroutine(Roll_Lock(roll_delay));
             }
@@ -133,13 +140,29 @@ public class PlayerMovement : MonoBehaviour {
             is_dash = false;
         }
 
-        if ((Input.GetKeyDown(KeyCode.Space) && is_ground && !is_attack && !is_fly && is_stamina) ||
-            (Input.GetButtonDown("J_A") && is_ground && !is_attack && !is_fly && is_stamina)) {
-            StartCoroutine(Jump());
+        if ((Input.GetKeyDown(KeyCode.Space) && is_stamina) ||
+            (Input.GetButtonDown("J_A") && is_stamina)) {
+            is_downhill = true;
         }
 
-        if ((Input.GetKeyDown(KeyCode.F) && is_ground && !is_attack) ||
-            (Input.GetButtonDown("J_X") && is_ground && !is_attack)) {
+        if ((Input.GetKeyUp(KeyCode.Space)) ||
+            (Input.GetButtonUp("J_A"))) {
+            is_downhill = false;
+        }
+
+        if ((Input.GetKeyDown(KeyCode.Space) && is_ground && !is_attack && !is_fly && is_stamina) ||
+            (Input.GetButtonDown("J_A") && is_ground && !is_attack && !is_fly && is_stamina)) {
+            StartCoroutine(Jump(2.0f, 30.0f));
+        }
+
+        if ((Input.GetKeyDown(KeyCode.Space) && !is_attack && is_fly && is_stamina && !is_jump_lock) ||
+            (Input.GetButtonDown("J_A") && !is_attack && is_fly && is_stamina && !is_jump_lock)) {
+            StartCoroutine(Jump(0.75f, 30.0f));
+            is_jump_lock = true;
+        }
+
+        if ((Input.GetKeyDown(KeyCode.F) && is_ground && !is_attack && !is_drop) ||
+            (Input.GetButtonDown("J_X") && is_ground && !is_attack && !is_drop)) {
             itemloot.Check_Area();
         }
 
@@ -166,13 +189,17 @@ public class PlayerMovement : MonoBehaviour {
     void Check_Value() {
         if (is_ground) {
             is_fly = false;
+            is_jump_lock = false;
             if (is_dash && is_ground) {
                 is_idle = false;
             }else {
                 is_idle = true;
             }
             if (velocity < 0.0f) {
-                velocity = -5.0f;
+                velocity = -2.0f;
+            }
+            if (is_downhill) {
+                is_downhill = false;
             }
         } else {
             is_fly = true;
@@ -207,6 +234,7 @@ public class PlayerMovement : MonoBehaviour {
         if (is_attack) {
             horizontal = 0;
             vertical = 0;
+            velocity = -1.0f;
         }
 
         if (is_fly) {
@@ -216,7 +244,21 @@ public class PlayerMovement : MonoBehaviour {
             cc.slopeLimit = 45f;
         }
 
+        if (is_downhill) {
+            velocity = velocity_downhill;
+            move_speed = walk_speed + dash_speed;
+            playerstatus.stat.stamina_point -= downhill_stamina * Time.deltaTime;
+            if (playerstatus.stat.stamina_point <= 0) {
+                is_downhill = false;
+            }
+        }
+
         if (is_wall) {
+        }
+
+        if (is_drop) {
+            horizontal = 0;
+            vertical = 0;
         }
 
         if (is_joystick) {
@@ -350,14 +392,15 @@ public class PlayerMovement : MonoBehaviour {
         cc.Move(input_vector * (move_speed * Time.deltaTime) + new Vector3(0.0f, velocity, 0.0f) * Time.deltaTime);
     }
 
-    IEnumerator Jump() {
+    IEnumerator Jump(float forward, float force) {
         is_jump = true;
         //velocity = Mathf.Sqrt(jump_speed * -2.0f * -15.0f);
         playerstatus.stat.stamina_point -= jump_stamina;
+        velocity = -2.0f;
         if (movement.z == 0 && movement.x == 0) {
-            StartCoroutine(Add_Impact(transform.up * jump_speed, 35.0f));
+            StartCoroutine(Add_Impact(transform.up * jump_speed, force));
         }else {
-            StartCoroutine(Add_Impact(transform.forward / 2 + (transform.up * jump_speed), 35.0f));
+            StartCoroutine(Add_Impact(transform.forward / forward + (transform.up * jump_speed), force));
         }
         yield return new WaitForSeconds(0.2f);
         is_jump = false;
@@ -376,6 +419,12 @@ public class PlayerMovement : MonoBehaviour {
         is_roll_lock = true;
         yield return new WaitForSeconds(delay);
         is_roll_lock = false;
+    }
+
+    public IEnumerator Drop_Item() {
+        is_drop = true;
+        yield return new WaitForSeconds(0.5f);
+        is_drop = false;
     }
 
     IEnumerator Attack() {

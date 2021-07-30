@@ -11,9 +11,11 @@ public class ItemLoot : MonoBehaviour {
     public float loot_range;
 
     PlayerInventory playerinventory;
+    PlayerMovement playermovement;
 
     void Awake() {
         playerinventory = GameObject.Find("System").GetComponent<PlayerInventory>();
+        playermovement = GameObject.Find("Player").GetComponent<PlayerMovement>();
     }
 
     void Start() {
@@ -50,6 +52,7 @@ public class ItemLoot : MonoBehaviour {
                 ItemData itemdata = area_item[0].gameObject.GetComponent<ItemData>();
                 //Debug.Log("object = " + area_item[0] + " / name = " + itemdata.all_data[itemdata.input_index].name);
                 Destroy(itemdata.gameObject);
+                StartCoroutine(playermovement.Drop_Item());
                 playerinventory.Find_Empty_ItemSlot(itemdata.input_index, itemdata.input_count);
             } else if(distance.Count >= 1) {
                 float min_distance = distance[0];
@@ -63,7 +66,10 @@ public class ItemLoot : MonoBehaviour {
                 ItemData itemdata = area_item[min_index].gameObject.GetComponent<ItemData>();
                 //Debug.Log("object = " + area_item[min_index] + " / name = " + itemdata.all_data[itemdata.input_index].name);
                 Destroy(itemdata.gameObject);
+                StartCoroutine(playermovement.Drop_Item());
                 playerinventory.Find_Empty_ItemSlot(itemdata.input_index, itemdata.input_count);
+            } else {
+                Debug.Log("아이템이 없습니다.");
             }
         }
     }

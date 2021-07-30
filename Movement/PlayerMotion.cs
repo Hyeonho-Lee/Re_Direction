@@ -72,5 +72,21 @@ public class PlayerMotion : MonoBehaviour {
         } else if (playermovement.is_attack == true && playermovement.attack_combo == 3) {
             animator.Play("sword_attack_3");
         }
+
+        if (playermovement.is_jump_lock == true) {
+            animator.SetBool("is_jump_lock", true);
+        } else {
+            animator.SetBool("is_jump_lock", false);
+        }
+
+        if (playermovement.is_downhill == true) {
+            animator.SetBool("is_downhill", true);
+        } else {
+            animator.SetBool("is_downhill", false);
+        }
+
+        if (playermovement.is_drop == true) {
+            animator.Play("drop_item");
+        }
     }
 }
