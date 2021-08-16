@@ -18,6 +18,7 @@ public class PlayerMovement : MonoBehaviour {
     public float attack_time;
     public float roll_time;
     public float roll_delay;
+    public float jump_delay;
     public float roll_speed;
     public float idle_stamina;
     public float jump_stamina;
@@ -25,6 +26,8 @@ public class PlayerMovement : MonoBehaviour {
     public float dash_stamina;
     public float attack_stamina;
     public float roll_stamina;
+    public float ground_height;
+    public float ground_range;
     private float roll_wait;
 
     public bool is_joystick;
@@ -33,6 +36,7 @@ public class PlayerMovement : MonoBehaviour {
     public bool is_rolls;
     public bool is_roll_timer;
     public bool is_roll_lock;
+    public bool is_jump_delay_lock;
     public bool is_attack;
     public bool is_jump;
     public bool is_jump_lock;
@@ -44,8 +48,7 @@ public class PlayerMovement : MonoBehaviour {
     public bool is_stamina;
     public bool is_idle;
     public bool is_drop;
-    public float ground_height;
-    public float ground_range;
+    public bool is_ui_chat;
 
     public LayerMask ground_hit;
     private RaycastHit wall_hit;
@@ -61,34 +64,37 @@ public class PlayerMovement : MonoBehaviour {
     TPSCamera tpscamera;
     ItemLoot itemloot;
     PlayerStatus playerstatus;
+    UI_Check ui_check;
 
     void Awake() {
         cc = GetComponent<CharacterController>();
         itemloot = GetComponent<ItemLoot>();
         tpscamera = GameObject.Find("TPS_Camera").GetComponent<TPSCamera>();
         playerstatus = GameObject.Find("System").GetComponent<PlayerStatus>();
+        ui_check = GameObject.Find("System").GetComponent<UI_Check>();
     }
 
     void Start() {
-        mass = 1.2f;
-        jump_speed = 2.0f;
-        walk_speed = 5.0f;
-        dash_speed = 5.0f;
-        velocity = 0.0f;
-        velocity_downhill = -6.0f;
-        ground_height = -0.08f;
-        ground_range = 0.2f;
-        attack_time = 0.0f;
-        attack_combo = 1.0f;
-        roll_time = 0.3f;
-        roll_delay = 0.85f;
-        roll_speed = 20.0f;
-        idle_stamina = 30.0f;
-        jump_stamina = 3.0f;
-        downhill_stamina = 7.0f;
-        dash_stamina = 5.0f;
-        attack_stamina = 5.0f;
-        roll_stamina = 5.0f;
+        mass = playerstatus.stat.mass;
+        jump_speed = playerstatus.stat.jump_speed;
+        walk_speed = playerstatus.stat.walk_speed;
+        dash_speed = playerstatus.stat.dash_speed;
+        velocity = playerstatus.stat.velocity;
+        velocity_downhill = playerstatus.stat.velocity_downhill;
+        ground_height = playerstatus.stat.ground_height;
+        ground_range = playerstatus.stat.ground_range;
+        attack_time = playerstatus.stat.attack_time;
+        attack_combo = playerstatus.stat.attack_combo;
+        roll_time = playerstatus.stat.roll_time;
+        roll_delay = playerstatus.stat.roll_delay;
+        jump_delay = playerstatus.stat.jump_delay;
+        roll_speed = playerstatus.stat.roll_speed;
+        idle_stamina = playerstatus.stat.idle_stamina;
+        jump_stamina = playerstatus.stat.jump_stamina;
+        downhill_stamina = playerstatus.stat.downhill_stamina;
+        dash_stamina = playerstatus.stat.dash_stamina;
+        attack_stamina = playerstatus.stat.attack_stamina;
+        roll_stamina = playerstatus.stat.roll_stamina;
         impact = Vector3.zero;
         is_joystick = true;
         is_stamina = true;
@@ -150,9 +156,10 @@ public class PlayerMovement : MonoBehaviour {
             is_downhill = false;
         }
 
-        if ((Input.GetKeyDown(KeyCode.Space) && is_ground && !is_attack && !is_fly && is_stamina) ||
-            (Input.GetButtonDown("J_A") && is_ground && !is_attack && !is_fly && is_stamina)) {
+        if ((Input.GetKeyDown(KeyCode.Space) && is_ground && !is_attack && !is_fly && is_stamina && !is_jump_delay_lock) ||
+            (Input.GetButtonDown("J_A") && is_ground && !is_attack && !is_fly && is_stamina && !is_jump_delay_lock)) {
             StartCoroutine(Jump(2.0f, 30.0f));
+            StartCoroutine(Jump_Lock(roll_delay));
         }
 
         if ((Input.GetKeyDown(KeyCode.Space) && !is_attack && is_fly && is_stamina && !is_jump_lock) ||
@@ -163,7 +170,7 @@ public class PlayerMovement : MonoBehaviour {
 
         if ((Input.GetKeyDown(KeyCode.F) && is_ground && !is_attack && !is_drop) ||
             (Input.GetButtonDown("J_X") && is_ground && !is_attack && !is_drop)) {
-            itemloot.Check_Area();
+            //itemloot.Check_Area();
         }
 
         if ((Input.GetKeyDown(KeyCode.Tab)) ||
@@ -241,7 +248,7 @@ public class PlayerMovement : MonoBehaviour {
             cc.slopeLimit = 0f;
             is_idle = false;
         } else {
-            cc.slopeLimit = 45f;
+            cc.slopeLimit = 60f;
         }
 
         if (is_downhill) {
@@ -259,6 +266,18 @@ public class PlayerMovement : MonoBehaviour {
         if (is_drop) {
             horizontal = 0;
             vertical = 0;
+        }
+
+        if (alpha > 0) {
+            is_ui_chat = true;
+        }else {
+            is_ui_chat = false;
+        }
+
+        if (is_ui_chat) {
+            StartCoroutine(ui_check.UI_Fade_Hold(1.0f, ui_check.ui_chat));
+        }else {
+            StartCoroutine(ui_check.UI_Fade_Hold(0.0f, ui_check.ui_chat));
         }
 
         if (is_joystick) {
@@ -406,6 +425,12 @@ public class PlayerMovement : MonoBehaviour {
         is_jump = false;
     }
 
+    IEnumerator Jump_Lock(float delay) {
+        is_jump_delay_lock = true;
+        yield return new WaitForSeconds(delay);
+        is_jump_delay_lock = false;
+    }
+
     IEnumerator Roll() {
         is_roll = true;
         is_rolls = true;
@@ -421,10 +446,26 @@ public class PlayerMovement : MonoBehaviour {
         is_roll_lock = false;
     }
 
-    public IEnumerator Drop_Item() {
+    public IEnumerator Drop_Item(float delay) {
         is_drop = true;
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(delay);
         is_drop = false;
+    }
+
+    [Range(0.0f, 1.0f)]
+    public float alpha = 0.0f;
+
+    public IEnumerator UI_Chat(float delay) {
+        alpha = 1.0f;
+        if (!is_ui_chat) {
+            while (alpha > 0.0f) {
+                alpha -= Time.deltaTime / delay;
+                if (alpha <= 0.0f) {
+                    alpha = 0.0f;
+                }
+                yield return null;
+            }
+        }
     }
 
     IEnumerator Attack() {

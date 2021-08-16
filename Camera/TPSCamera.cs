@@ -37,9 +37,9 @@ public class TPSCamera : MonoBehaviour {
             mouse_horizontal = Input.GetAxis("Mouse X");
             mouse_vertical = Input.GetAxis("Mouse Y");
         } else {
-            mouse_horizontal = Input.GetAxis("J_Horizontal");
-            mouse_vertical = -Input.GetAxis("J_Vertical");
-            if (Mathf.Abs(mouse_horizontal) < 0.03f && Mathf.Abs(mouse_vertical) < 0.03f) {
+            mouse_horizontal = Input.GetAxis("J_Horizontal") * 3f;
+            mouse_vertical = -Input.GetAxis("J_Vertical") * 3f;
+            if (Mathf.Abs(mouse_horizontal) < 0.03f * 3f && Mathf.Abs(mouse_vertical) < 0.03f * 3f) {
                 mouse_horizontal = 0f;
                 mouse_vertical = 0f;
             }

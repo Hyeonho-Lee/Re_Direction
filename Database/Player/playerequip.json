@@ -1,0 +1,20 @@
+{
+  "head_skin": 1,
+  "body_skin": 1,
+  "leg_skin": 1,
+  "knee_skin": 1,
+  "arm_skin": 1,
+  "hand_skin": 1,
+  "foot_skin": 1,
+  "head_equip": 1,
+  "body_equip": 1,
+  "pant_equip": 1,
+  "hand_equip": 1,
+  "foot_equip": 1,
+  "weapon_equip": 1,
+  "spell_equip": 1,
+  "accessory_1_equip": 1,
+  "accessory_2_equip": 1,
+  "bag_equip": 1,
+  "safe_bag_equip": 1
+}

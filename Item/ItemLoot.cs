@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEditor;
 
 public class ItemLoot : MonoBehaviour {
     public Collider[] area_object;
@@ -23,19 +22,6 @@ public class ItemLoot : MonoBehaviour {
         loot_range = 1.5f;
     }
 
-    void Update() {
-    }
-
-    void OnDrawGizmos() {
-        Color green = new Color(0.0f, 1.0f, 0.0f, 0.2f);
-        Color red = new Color(1.0f, 0.0f, 0.0f, 0.6f);
-
-        Handles.color = red;
-        Handles.DrawWireDisc(transform.position, Vector3.up, loot_range);
-        //Handles.DrawSolidArc(transform.position, Vector3.up, transform.forward, loot_angle, loot_range);
-        //Handles.DrawSolidArc(transform.position, Vector3.up, transform.forward, -loot_angle, loot_range);
-    }
-
     public void Check_Area() {
         List<float> distance = new List<float>();
         area_item = new List<GameObject>();
@@ -50,9 +36,10 @@ public class ItemLoot : MonoBehaviour {
             }
             if(distance.Count == 1) {
                 ItemData itemdata = area_item[0].gameObject.GetComponent<ItemData>();
-                //Debug.Log("object = " + area_item[0] + " / name = " + itemdata.all_data[itemdata.input_index].name);
-                Destroy(itemdata.gameObject);
-                StartCoroutine(playermovement.Drop_Item());
+                Vector3 player_forward = Quaternion.Euler(0f, 0f, 0f) * transform.forward;
+                //Destroy(itemdata.gameObject);
+                StartCoroutine(playermovement.Drop_Item(0.5f));
+                StartCoroutine(playermovement.UI_Chat(5.0f));
                 playerinventory.Find_Empty_ItemSlot(itemdata.input_index, itemdata.input_count);
             } else if(distance.Count >= 1) {
                 float min_distance = distance[0];
@@ -64,12 +51,12 @@ public class ItemLoot : MonoBehaviour {
                     }
                 }
                 ItemData itemdata = area_item[min_index].gameObject.GetComponent<ItemData>();
-                //Debug.Log("object = " + area_item[min_index] + " / name = " + itemdata.all_data[itemdata.input_index].name);
-                Destroy(itemdata.gameObject);
-                StartCoroutine(playermovement.Drop_Item());
+                //Destroy(itemdata.gameObject);
+                StartCoroutine(playermovement.Drop_Item(0.5f));
+                StartCoroutine(playermovement.UI_Chat(5.0f));
                 playerinventory.Find_Empty_ItemSlot(itemdata.input_index, itemdata.input_count);
             } else {
-                Debug.Log("아이템이 없습니다.");
+                //Debug.Log("아이템이 없습니다.");
             }
         }
     }

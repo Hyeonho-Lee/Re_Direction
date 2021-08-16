@@ -11,6 +11,10 @@ public class FPS_Check : MonoBehaviour
 
     float deltaTime = 0.0f;
 
+    void Awake() {
+        Application.targetFrameRate = 120;
+    }
+
     void Start() {
         fFont_Size = fFont_Size == 0 ? 50 : fFont_Size;
     }
