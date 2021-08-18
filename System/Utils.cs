@@ -1,16 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Utils {
     public class Utils {
-        // TextMesh 문자를 오브젝트로 출력
-        public static TextMesh CreateTextMesh(string text = null, Transform parent = null, Vector3 localPosition = default(Vector3), float cellSize = 0.0f, int fontSize = 40, Color? color = null, TextAnchor textAnchor = TextAnchor.UpperLeft, TextAlignment textAllgnment = TextAlignment.Left, int sortingOrder = 5000) {
-            if (color == null)
-                color = Color.white;
-
-            return CreateTextMesh(text, parent, localPosition, cellSize, fontSize, (Color)color, textAnchor, textAllgnment, sortingOrder);
-        }
 
         public static TextMesh CreateTextMesh(string text, Transform parent, Vector3 localPosition, float cellSize, int fontSize, Color color, TextAnchor textAnchor, TextAlignment textAllgnment, int sortingOrder) {
             GameObject gameObject = new GameObject("test_text", typeof(TextMesh));
@@ -31,17 +25,22 @@ namespace Utils {
             return textMesh;
         }
 
-        // 마우스 스크린 좌표
-        public static Vector3 GetScreenMousePosition() {
-            Vector3 screenPosition = GetWorldMousePosition(Input.mousePosition, Camera.main);
-            screenPosition.z = 0.0f;
-            return screenPosition;
-        }
-
-        // 마우스 월드 좌표
-        public static Vector3 GetWorldMousePosition(Vector3 screenPosition, Camera worldCamera) {
-            Vector3 worldPosition = worldCamera.ScreenToWorldPoint(screenPosition);
-            return worldPosition;
+        public static GameObject CreateUIGrid(string text, Font font, Transform parent, Vector3 localPosition, float cellSize, int fontSize, Color color, TextAnchor textAllgnment) {
+            GameObject gameObject = new GameObject("ui_grid", typeof(RectTransform));
+            Transform transform = gameObject.transform;
+            transform.SetParent(parent, true);
+            transform.localPosition = localPosition;
+            RectTransform rect_transform = gameObject.GetComponent<RectTransform>();
+            rect_transform.sizeDelta = new Vector2(cellSize, cellSize);
+            gameObject.AddComponent<Button>();
+            gameObject.AddComponent<Text>();
+            Text g_text = gameObject.GetComponent<Text>();
+            g_text.text = text;
+            g_text.font = font;
+            g_text.color = color;
+            g_text.fontSize = fontSize;
+            g_text.alignment = textAllgnment;
+            return gameObject;
         }
 
         // 마우스 월드오브젝트 좌표
@@ -53,6 +52,13 @@ namespace Utils {
                 //Debug.Log(hit.transform.gameObject.name);
             }
             return hit.point;
+        }
+
+        // 마우스 스크린 좌표
+        public static Vector3 GetScreenPosition() {
+            Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            Debug.Log("마우스 좌표: " + Input.mousePosition);
+            return mousePosition;
         }
     }
 }

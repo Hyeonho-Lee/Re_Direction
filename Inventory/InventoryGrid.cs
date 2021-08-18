@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using Utils;
 
 public class InventoryGrid {
@@ -9,30 +10,31 @@ public class InventoryGrid {
     private float cellSize;
     private Vector3 originPosition;
     private int[,] grid_array;
-    private TextMesh[,] debugTextArray;
+    //private TextMesh[,] debugTextArray;
+    private GameObject[,] debugTextArray;
 
-    public InventoryGrid(int width, int height, float cellSize, Vector3 originPosition) {
+    public InventoryGrid(int width, int height, float cellSize, Vector3 originPosition, Font font, Transform parent) {
         this.width = width;
         this.height = height;
         this.cellSize = cellSize;
         this.originPosition = originPosition;
 
         grid_array = new int[width, height];
-        debugTextArray = new TextMesh[width, height];
+        //debugTextArray = new TextMesh[width, height];
+        debugTextArray = new GameObject[width, height];
 
         for (int x = 0; x < grid_array.GetLength(0); x++) {
             for (int y = 0; y < grid_array.GetLength(1); y++) {
-                debugTextArray[x, y] = Utils.Utils.CreateTextMesh(grid_array[x, y].ToString(), null, GetWorldPosition(x, y) + (new Vector3(cellSize, cellSize) * 0.5f), cellSize, 20, Color.black, TextAnchor.MiddleCenter);
-                Debug.DrawLine(GetWorldPosition(x, y), GetWorldPosition(x, y + 1), Color.red, 100f);
-                Debug.DrawLine(GetWorldPosition(x, y), GetWorldPosition(x + 1, y), Color.red, 100f);
+                //debugTextArray[x, y] = Utils.Utils.CreateTextMesh(grid_array[x, y].ToString(), null, GetWorldPosition(x, y) + (new Vector3(cellSize, cellSize) * 0.5f), cellSize, 20, Color.black, TextAnchor.MiddleCenter);
+                debugTextArray[x, y] = Utils.Utils.CreateUIGrid(grid_array[x, y].ToString(), font, parent, GetWorldPosition(x, y) + (new Vector3(cellSize, cellSize) * 0.5f), cellSize, 40, Color.black, TextAnchor.MiddleCenter);
             }
         }
-        Debug.DrawLine(GetWorldPosition(0, height), GetWorldPosition(width, height), Color.red, 100f);
-        Debug.DrawLine(GetWorldPosition(width, 0), GetWorldPosition(width, height), Color.red, 100f);
     }
 
     private Vector3 GetWorldPosition(int x, int y) {
-        return new Vector3(x, y) * cellSize + originPosition;
+        Vector3 result = new Vector3(x, y) * cellSize + originPosition;
+        Debug.Log(result);
+        return result;
     }
 
     private void GetXY(Vector3 worldPosition, out int x, out int y) {
@@ -44,7 +46,8 @@ public class InventoryGrid {
     public void SetValue(int x, int y, int value) {
         if (x >= 0 && y >= 0 && x < width && y < height) {
             grid_array[x, y] = value;
-            debugTextArray[x, y].text = grid_array[x, y].ToString();
+            Text text = debugTextArray[x, y].GetComponent<Text>();
+            text.text = grid_array[x, y].ToString();
         }
     }
 
